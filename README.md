@@ -1,0 +1,4 @@
+myspice
+=======
+
+Simple SPICE program
