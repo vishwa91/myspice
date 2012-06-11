@@ -1,0 +1,9 @@
+V 1 0 5
+R 2 1 10k
+R 3 2 10k
+C 3 0 11n
+R 3 out 2meg
+C out 2 22n
+E 4 0 3 0 0.2meg
+R out 4 10
+.clamp out 0

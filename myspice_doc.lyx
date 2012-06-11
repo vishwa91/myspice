@@ -1,0 +1,4608 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass literate-article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1.25cm
+\topmargin 1.25cm
+\rightmargin 1.25cm
+\bottommargin 1.25cm
+\headheight 1.25cm
+\headsep 1.25cm
+\footskip 1.25cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+A simple SPICE backend
+\end_layout
+
+\begin_layout Author
+Saragadam R V Vishwanath
+\begin_inset Newline newline
+\end_inset
+
+EE10B035
+\begin_inset Newline newline
+\end_inset
+
+Department of Electrical Engineering
+\begin_inset Newline newline
+\end_inset
+
+IITMadras
+\end_layout
+
+\begin_layout Abstract
+SPICE is a circuit simulator program to solve easy as well as complicated
+ linear and non linear circuits.
+ A SPICE program also does a frequency sweep, a transient analysis etc.
+ The present document will present a simple version of the SPICE program,
+ called myspice which can solve linear circuits with bias points and can
+ do a frequency sweep.
+ The document will also deal with the code written in c and the method of
+ using the program.
+\end_layout
+
+\begin_layout Part*
+Introduction
+\end_layout
+
+\begin_layout Standard
+The SPICE program was developed as a tool for complex circuit analysis.
+ The program is a very poweful tool for studying how ciruits work for different
+ conditions.
+ The program presented here is a very simple version of the original SPICE
+ program.
+ It can solve circuits with linear components and DC sources or AC sources
+ with a single frequency and no offset.
+ The code has been written in C and was an opportunity to learn the powerful
+ tool in C, the pointers.
+ The program requires a net list , which is a simple text file containing
+ the information about all the elements that are present in the ciruit to
+ be solved.
+ The subsequent sections will deal with the semantics of the code and the
+ way of using the program.
+\end_layout
+
+\begin_layout Part*
+Using The program
+\end_layout
+
+\begin_layout Standard
+The program is to be run from the terminal from the same folder where the
+ netlist is located.
+ The usage is very simple.
+ There are there modes of operation
+\end_layout
+
+\begin_layout Itemize
+Circuit is a resistive network with any number of sources.
+ In such a case, the following command is to be used
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+$ ./myspice netlist.dat
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Circuit has any linear component and the whole circuit works on single frequency.
+ Then the command is as follows
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+$ ./myspice netlist.dat frequency
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+A frequency sweep is required for the circuit.
+ Then,
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+$ ./myspice netlist.dat start_frequency end_frequency sampling_rate
+\end_layout
+
+\begin_layout Standard
+This case generates another file, plot_data.dat, which has the outputs along
+ with the corresponding frequencies.
+ This file can be used for ploting the graph of output vs frequency
+\end_layout
+
+\end_deeper
+\begin_layout Part*
+Netlist
+\end_layout
+
+\begin_layout Standard
+The netlist has the information about the circuit.
+ Each row of the netlist is an element with data about the nodes between
+ which it is connected, the dependencies if any and the elements value.
+ The following gives the details about the format of each element
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="10" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top" width="0">
+<column alignment="center" valignment="top" width="0">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Element name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+definition in the netlist
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Voltage source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+V_name node1 node2 value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Current source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+I_name node1 node2 value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Resistance
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+R_name node1 node2 value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Inductor
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+L_name node1 node2 value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Capacitor
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C_name node1 node2 value
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Voltage dependent voltage source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+E_name node1 node2 depnode1 depnode2 proportionality_constant
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Voltage dependent current source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+G_name node1 node2 depnode1 depnode2 proportionality_constant
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Current controlled voltage source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+H_name node1 node2 dep_voltage_source proportionality constant 
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Current controlled current source
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+F_name node1 node2 dep_voltage_source proportionality constant
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There is no restriction on the node name provided it has only alpha numeric
+ values along with underscore.One of the nodes has to be 0 for the program
+ to solve the circuit.
+ The value field will have constants with or without powers of 10.
+ The valid multipliers are 
+\begin_inset Formula $k,meg,m,n,p$
+\end_inset
+
+.
+ To get voltage between two nodes node1 and node2, the following line must
+ be included:
+\end_layout
+
+\begin_layout LyX-Code
+.clamp node1 node2
+\end_layout
+
+\begin_layout Standard
+Comments can also included by starting the line with # or *.
+\end_layout
+
+\begin_layout Standard
+The followin netlist is an example
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "circuit1.dat"
+lstparams "breaklines=true"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part*
+The Code
+\end_layout
+
+\begin_layout Standard
+The code has been completely written in c and is compiled using 
+\begin_inset Formula $gcc$
+\end_inset
+
+.
+ The code parses the netlist, extracts the elements and stores them in a
+ linked list.
+ Then the equations are solved using gauss jordhan elimination method.
+ If it is a frequency sweep, it does the same process for the given sample
+ rate.
+\end_layout
+
+\begin_layout Section*
+Pseudocode
+\end_layout
+
+\begin_layout Standard
+The pseudo code for the main function is as follows:
+\end_layout
+
+\begin_layout LyX-Code
+open netlist.dat
+\begin_inset Newline newline
+\end_inset
+
+if number_of_arguements is 2:
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+call solver
+\end_layout
+
+\begin_layout LyX-Code
+print voltage difference
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+if number_of_arguements is 3:
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+frequency = argv[2]
+\end_layout
+
+\begin_layout LyX-Code
+call solver
+\end_layout
+
+\begin_layout LyX-Code
+print voltage difference
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+if number_of_arguements is 5:
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+init_frequency = argv[2]
+\end_layout
+
+\begin_layout LyX-Code
+final_frequency = argv[3]
+\end_layout
+
+\begin_layout LyX-Code
+num_steps = argv[4]
+\end_layout
+
+\begin_layout LyX-Code
+diff = (final_frequency-init_frequency)/num_steps
+\end_layout
+
+\begin_layout LyX-Code
+create file plot_data.dat
+\end_layout
+
+\begin_layout LyX-Code
+while num_steps:
+\end_layout
+
+\begin_deeper
+\begin_layout LyX-Code
+call solver
+\end_layout
+
+\begin_layout LyX-Code
+write frequency, voltage difference
+\end_layout
+
+\begin_layout LyX-Code
+num_steps -= 1
+\end_layout
+
+\begin_layout LyX-Code
+init_frequency = init_frequency + diff
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+close plot_data.dat
+\end_layout
+
+\end_deeper
+\begin_layout LyX-Code
+close netlist.dat
+\end_layout
+
+\begin_layout Standard
+The above code for main function calls the solver function, which does the
+ actual work.
+ The solver function parses the netlist.dat file, extracts the element informatio
+n, creates the conductance matrix , solves it and returns the voltage difference
+ across the required nodes.
+ The way solver works is explained in the subsequent code.
+\end_layout
+
+\begin_layout Section*
+The C code
+\end_layout
+
+\begin_layout Standard
+The main code consists of multiple functions for error checking, extracting
+ values, and solving the circuit.
+ The code initially has the all the functions and their definitions and
+ then the final main function.
+\end_layout
+
+\begin_layout Subsection*
+Includes
+\end_layout
+
+\begin_layout Standard
+The includes has all the header files to be included for the file.
+ 
+\begin_inset Formula $math.h$
+\end_inset
+
+ is used for calculating the magnitude of complex numbers.
+ 
+\begin_inset Formula $complex.h$
+\end_inset
+
+ defines all the macros and the functions for handling complex numbers.
+ This is not relevant for a resistive network , but if the circuit contains
+ capacitors and inductors, then the complex impedences require the header
+ file for operations.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+#include<stdio.h>
+\end_layout
+
+\begin_layout Scrap
+#include<stdlib.h>
+\end_layout
+
+\begin_layout Scrap
+#include<string.h>
+\end_layout
+
+\begin_layout Scrap
+#include<math.h>
+\end_layout
+
+\begin_layout Scrap
+#include<complex.h>
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+Constants
+\end_layout
+
+\begin_layout Standard
+The constants define the maximums.
+ 
+\begin_inset Formula $MAXBUF$
+\end_inset
+
+ defines the maximum characters in a line of the netlist.
+ 
+\begin_inset Formula $CHARMAX$
+\end_inset
+
+ defines the maximum number of characters in the node name.
+ 
+\begin_inset Formula $NODEMAX$
+\end_inset
+
+ defines the maximum number of distinct nodes
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+#define MAXBUF 256
+\end_layout
+
+\begin_layout Scrap
+#define CHARMAX 32
+\end_layout
+
+\begin_layout Scrap
+#define NODEMAX 40
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+err_val() function
+\end_layout
+
+\begin_layout Standard
+The err_val function takes as arguements the string representing the value,
+ i.e, the last field in the netlist and checks for possible type errors.
+ Typical errors include multiple dots or no number at all or a wrong character.
+ Returns 1 if everything is correct.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+int err_val(char *str_val)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	int num_flag = 0,char_flag = 0,dot_flag = 0;
+\end_layout
+
+\begin_layout Scrap
+	int i,len;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	char letter;
+\end_layout
+
+\begin_layout Scrap
+	len = strlen(str_val);
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	for(i = 0;i<len;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		letter = *(str_val + i);
+\end_layout
+
+\begin_layout Scrap
+		if(letter == '.')
+\end_layout
+
+\begin_layout Scrap
+		{	char next_letter = *(str_val + i +1);
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+			if ((char_flag != 0) || ((next_letter<'0') || (next_letter>'9')) || dot_flag!
+=0 )
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				printf("Invalid token 
+\backslash
+'value
+\backslash
+'.Please correct the netlist
+\backslash
+n ");
+\end_layout
+
+\begin_layout Scrap
+				exit(3);
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+			else
+\end_layout
+
+\begin_layout Scrap
+				dot_flag++;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		else if( (letter == '_') )
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			printf("Invalid token 
+\backslash
+'value
+\backslash
+'.Please correct the netlist
+\backslash
+n ");
+\end_layout
+
+\begin_layout Scrap
+			exit(3);
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		else if((letter >=48)&&(letter<=57))
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			if (char_flag == 0)
+\end_layout
+
+\begin_layout Scrap
+				num_flag++;
+\end_layout
+
+\begin_layout Scrap
+			else
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				printf("Invalid token 
+\backslash
+'value
+\backslash
+'.Please correct the netlist
+\backslash
+n ");
+\end_layout
+
+\begin_layout Scrap
+				exit(3);
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		else if ((letter>=97)&&(letter<=122))
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			if (num_flag != 0)
+\end_layout
+
+\begin_layout Scrap
+				char_flag++;
+\end_layout
+
+\begin_layout Scrap
+			else
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				printf("Invalid token 
+\backslash
+'value
+\backslash
+'.Please correct the netlist
+\backslash
+n ");
+\end_layout
+
+\begin_layout Scrap
+				exit(3);
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	return 1;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+err_check() function
+\end_layout
+
+\begin_layout Standard
+This function checks for possible errors in one row of the netlist.
+ Possible errors are presence of special characters.
+ Returns the lenght of the string input if everything is correct.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+int err_check(char *string)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	int len = strlen(string);
+\end_layout
+
+\begin_layout Scrap
+	int i = 0;
+\end_layout
+
+\begin_layout Scrap
+	char letter;
+\end_layout
+
+\begin_layout Scrap
+	for(i=0;i<len;i++)
+\end_layout
+
+\begin_layout Scrap
+	{	
+\end_layout
+
+\begin_layout Scrap
+		letter = string[i];
+\end_layout
+
+\begin_layout Scrap
+		if( ((letter == 9) || (letter == 10) || (letter == 32) || (letter == 95)
+ || (letter == 46) || ( (letter>=48) 
+\end_layout
+
+\begin_layout Scrap
+			&& (letter <=57) ) || ( (letter>=65) && (letter<=90) ) || ( (letter>=97)
+ && (letter<=122) ) ) );
+\end_layout
+
+\begin_layout Scrap
+		else
+\begin_inset Newline newline
+\end_inset
+
+			return i;
+\begin_inset Newline newline
+\end_inset
+
+	}
+\begin_inset Newline newline
+\end_inset
+
+	return len;
+\begin_inset Newline newline
+\end_inset
+
+}
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsection*
+analyse() function
+\end_layout
+
+\begin_layout Standard
+The analyse function takes in the value field and returns the float version
+ of the value.
+ It also handles multipliers if specified.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+float analyse(char *string)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	float val;
+\end_layout
+
+\begin_layout Scrap
+	float mult = 1;
+\end_layout
+
+\begin_layout Scrap
+	int len = 0;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	int val_err;
+\end_layout
+
+\begin_layout Scrap
+	val_err = err_val(string);
+\end_layout
+
+\begin_layout Scrap
+	if (val_err == 1)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		val = atof(string);
+\end_layout
+
+\begin_layout Scrap
+		len = strlen(string);
+\end_layout
+
+\begin_layout Scrap
+		switch(string[len-1])
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			case 'k':	mult = 1000;
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+			case 'n': 	mult = 1.0/10000000000.0;
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+			case 'u':	mult = 1.0/1000000.0;
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+			case 'm':	mult = 1.0/1000.0;
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+			case 'g':	if(string[len-2] == 'e' && string[len-3] == 'm')
+\end_layout
+
+\begin_layout Scrap
+					mult = 1000000;
+\end_layout
+
+\begin_layout Scrap
+					else
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+						printf("invalid multiplier found.
+ Please correct the netlist
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+						exit(2);
+\end_layout
+
+\begin_layout Scrap
+					}
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+			default:	mult = 1;
+\end_layout
+
+\begin_layout Scrap
+				break;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	return(val*mult);
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+elem_analyse() function
+\end_layout
+
+\begin_layout Standard
+This function takes as arguments, the first letter of the name of the element.
+ Returns 1 if it is an independent element, 2 if it is a voltage controlled
+ source and 3 if it is a current controlled source.
+ Returns 0 if it is not a valid element.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+int elem_analyse(char elem,char *indep_elem,char *v_dep_elem,char *i_dep_elem)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	int num_elem;
+\end_layout
+
+\begin_layout Scrap
+	int flag = 0;
+\end_layout
+
+\begin_layout Scrap
+	for(num_elem = 0;num_elem<strlen(indep_elem);num_elem++)
+\begin_inset Newline newline
+\end_inset
+
+	{
+\begin_inset Newline newline
+\end_inset
+
+		if (elem == indep_elem[num_elem])
+\begin_inset Newline newline
+\end_inset
+
+			flag = 1;
+\begin_inset Newline newline
+\end_inset
+
+	}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+	for(num_elem = 0;num_elem<strlen(v_dep_elem);num_elem++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		if (elem == v_dep_elem[num_elem])
+\end_layout
+
+\begin_layout Scrap
+			flag = 2;
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	for(num_elem = 0;num_elem<strlen(i_dep_elem);num_elem++)
+\begin_inset Newline newline
+\end_inset
+
+	{
+\begin_inset Newline newline
+\end_inset
+
+		if (elem == i_dep_elem[num_elem])
+\begin_inset Newline newline
+\end_inset
+
+			flag = 3;
+\begin_inset Newline newline
+\end_inset
+
+	}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+	return flag;
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+get_index() function
+\end_layout
+
+\begin_layout Standard
+This function takes the node as the arguments and returns the index of the
+ node in the main node list.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+int get_index(char node[32],char node_list[100][32],int num_nodes)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	int i;
+\end_layout
+
+\begin_layout Scrap
+	for (i = 0;i<num_nodes;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		if (strcmp(node,node_list[i]) == 0)
+\end_layout
+
+\begin_layout Scrap
+			return i;
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+c_abs function
+\end_layout
+
+\begin_layout Standard
+This function takes a complex number as an arguement and returns the modulus
+ of it.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+float c_abs(complex number)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	float real,imag;
+\end_layout
+
+\begin_layout Scrap
+	float abs_val;
+\end_layout
+
+\begin_layout Scrap
+	real = creal(number);
+\end_layout
+
+\begin_layout Scrap
+	imag = cimag(number);
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	abs_val = sqrt(real*real+imag*imag);
+\end_layout
+
+\begin_layout Scrap
+	return abs_val;
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+Node structure definition
+\end_layout
+
+\begin_layout Standard
+The structure node is the main unit which holds the information about the
+ element parsed.
+ The definition has the variables, a vlt
+\end_layout
+
+\begin_layout Standard
+_src_num variable to hold the index of the voltage source and the pointers
+ next and prev.
+ These pointers help to make a doubly linked link list, which can be traversed
+ in both direction.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+struct node
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	char n1[CHARMAX] ;
+\end_layout
+
+\begin_layout Scrap
+	char n2[CHARMAX] ;
+\end_layout
+
+\begin_layout Scrap
+	char n3[CHARMAX] ;
+\end_layout
+
+\begin_layout Scrap
+	char n4[CHARMAX] ;
+\end_layout
+
+\begin_layout Scrap
+	char depname[CHARMAX];
+\end_layout
+
+\begin_layout Scrap
+	char name[CHARMAX] ;
+\end_layout
+
+\begin_layout Scrap
+	complex value;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	int vlt_src_num;
+\end_layout
+
+\begin_layout Scrap
+	struct node* next;
+\end_layout
+
+\begin_layout Scrap
+	struct node* prev;
+\end_layout
+
+\begin_layout Scrap
+};
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+typedef struct node node;
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+solver() function
+\end_layout
+
+\begin_layout Standard
+This is the most important function which calls other function except main
+ function.
+ The function takes the console inputs and the frequency as the input.
+ Returns the voltage difference between the required nodes as a float.
+ The function is discussed in great detail.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+complex solver(char **argv,float frequency)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Initiation of variables
+\end_layout
+
+\begin_layout Standard
+A file pointer fp is created to hold the netlist file, which is opened in
+ read mode.
+ The variable line will hold the parsed line.
+ word holds the token extracted using 
+\begin_inset Formula $strtok()$
+\end_inset
+
+ and tokbuf holds the pointer for extracting the next token.
+ The indep_elem, v_dep_elem and i_dep_elem hold the first letter of the
+ correspondind element types.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	FILE *fp;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	fp = fopen(argv[1],"r");
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	char line[MAXBUF];
+\end_layout
+
+\begin_layout Scrap
+	char *word;
+\end_layout
+
+\begin_layout Scrap
+	char *tokbuf;
+\end_layout
+
+\begin_layout Scrap
+	char delim[] = " 
+\backslash
+t
+\backslash
+n";
+\end_layout
+
+\begin_layout Scrap
+	int check_var;
+\end_layout
+
+\begin_layout Scrap
+	char indep_elem[] = {'R','L','C','V','I','r','l','c','v','i','
+\backslash
+0'};
+\end_layout
+
+\begin_layout Scrap
+	char v_dep_elem[] = {'E','G','e','g','
+\backslash
+0'};
+\begin_inset Newline newline
+\end_inset
+
+	char i_dep_elem[] = {'F','H','f','h','
+\backslash
+0'};
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+	int elem_type,num_nodes = 0;
+\end_layout
+
+\begin_layout Scrap
+	int vlt_src = 0;
+\end_layout
+
+\begin_layout Scrap
+	int cur_dep_vlt = 0;
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Creating the start node
+\end_layout
+
+\begin_layout Standard
+A start node is created to keep track of all the nodes.
+ The old node is a temporary variable to traverse through the link list.
+ The 
+\begin_inset Formula $clamp$
+\end_inset
+
+ array holds the two nodes between which the voltage is to be found.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	node *start;
+\end_layout
+
+\begin_layout Scrap
+	start = (node*)malloc(sizeof(node));
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	start->next = NULL;
+\end_layout
+
+\begin_layout Scrap
+	start->prev = NULL;
+\end_layout
+
+\begin_layout Scrap
+	node *old ;
+\begin_inset Newline newline
+\end_inset
+
+	old = (node *)malloc(sizeof(node));
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+	char clamp_nodes[2][32];
+\begin_inset Newline newline
+\end_inset
+
+	int clamp_cnt = 0;
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Parsing loop
+\end_layout
+
+\begin_layout Standard
+This loop continuously parsed the netlist file till there is a EOF.
+ It skips parsing the line if it starts with 
+\begin_inset Formula $\#$
+\end_inset
+
+ or 
+\begin_inset Formula $*$
+\end_inset
+
+ .
+ If it starts with '.', it verifies if the line is 
+\begin_inset Formula $.clamp$
+\end_inset
+
+ and then parses it and stores the clamped nodes(The nodes across which
+ voltage difference is to be found out.)
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	while(fgets(line,MAXBUF-1,fp) != NULL)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		if (line[0] == '#'|| line[0] == '*') ;
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		else if(line[0] == '.')
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			tokbuf = line;
+\end_layout
+
+\begin_layout Scrap
+			word = strtok(tokbuf,delim);
+\end_layout
+
+\begin_layout Scrap
+			if(strcmp(word,".clamp") == 0)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				while(word!=NULL)
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					if(clamp_cnt>1)
+\end_layout
+
+\begin_layout Scrap
+						break;
+\end_layout
+
+\begin_layout Scrap
+					tokbuf = NULL;
+\end_layout
+
+\begin_layout Scrap
+					word = strtok(tokbuf,delim);
+\end_layout
+
+\begin_layout Scrap
+					strcpy(clamp_nodes[clamp_cnt],word);
+\end_layout
+
+\begin_layout Scrap
+					clamp_cnt++;
+\end_layout
+
+\begin_layout Scrap
+				}
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Storing the element's information
+\end_layout
+
+\begin_layout Standard
+When the parsed line contains a valid element, it start extracting tokens
+ till there is an EOL.
+ It checks for all possible errors.
+ Once no errors are found, it proceeds by creating a temporaru node variable
+ to hold the data.
+ First, the name of the element is copied.
+ Depending on the name, corresponding values are assigned in the node.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+		else
+\end_layout
+
+\begin_layout Scrap
+		{
+\begin_inset Newline newline
+\end_inset
+
+			int err_code;
+\begin_inset Newline newline
+\end_inset
+
+			err_code = err_check(line);
+\begin_inset Newline newline
+\end_inset
+
+						
+\begin_inset Newline newline
+\end_inset
+
+			if (err_code != strlen(line))
+\begin_inset Newline newline
+\end_inset
+
+			{
+\begin_inset Newline newline
+\end_inset
+
+				printf("Invalid character %c found.Now aborting
+\backslash
+n",line[err_code]);
+\begin_inset Newline newline
+\end_inset
+
+				exit(2);
+\begin_inset Newline newline
+\end_inset
+
+			}
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			node *temp ;
+\begin_inset Newline newline
+\end_inset
+
+			temp = (node*)malloc(sizeof(node));
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			if(num_nodes == 0)
+\begin_inset Newline newline
+\end_inset
+
+				temp = start;
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			tokbuf = line;
+\begin_inset Newline newline
+\end_inset
+
+			word = strtok(tokbuf, delim);
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			strcpy(temp->name,word);
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			elem_type = elem_analyse(temp->name[0],indep_elem,v_dep_elem,i_dep_elem);
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			if(elem_type == 0)
+\begin_inset Newline newline
+\end_inset
+
+			{
+\begin_inset Newline newline
+\end_inset
+
+				printf("Element %s not defined
+\backslash
+n",word);
+\begin_inset Newline newline
+\end_inset
+
+				exit(6);
+\begin_inset Newline newline
+\end_inset
+
+			}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+			if(elem_type == 1)
+\end_layout
+
+\begin_layout Scrap
+			{	
+\end_layout
+
+\begin_layout Scrap
+				int cnt = 0;
+\end_layout
+
+\begin_layout Scrap
+				if (temp->name[0] =='V' || temp->name[0]  == 'v' )
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					temp->vlt_src_num = vlt_src;
+\end_layout
+
+\begin_layout Scrap
+					vlt_src++;
+\end_layout
+
+\begin_layout Scrap
+				}
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+				while(word != NULL)
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					tokbuf = NULL;
+\end_layout
+
+\begin_layout Scrap
+					word = strtok(tokbuf,delim);
+\end_layout
+
+\begin_layout Scrap
+					
+\end_layout
+
+\begin_layout Scrap
+					if( ( word==NULL && cnt<2 ) || ( word!=NULL && cnt>2 ) )
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+						printf("Invalid number of tokens.
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+						exit(4);
+\end_layout
+
+\begin_layout Scrap
+					}
+\end_layout
+
+\begin_layout Scrap
+					
+\end_layout
+
+\begin_layout Scrap
+					switch(cnt)
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+						case 0:	strcpy(temp->n1,word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 1:	strcpy(temp->n2,word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 2: 	if(frequency != 0)
+\end_layout
+
+\begin_layout Scrap
+								{
+\end_layout
+
+\begin_layout Scrap
+									if(temp->name[0] == 'R'||temp->name[0] == 'r')
+\end_layout
+
+\begin_layout Scrap
+										temp->value = analyse(word) ;
+\end_layout
+
+\begin_layout Scrap
+									else if(temp->name[0] == 'L'|| temp->name[0] == 'l')
+\end_layout
+
+\begin_layout Scrap
+										temp->value = I*frequency*analyse(word);
+\end_layout
+
+\begin_layout Scrap
+									else if (temp->name[0] == 'C' || temp->name[0] == 'c')
+\end_layout
+
+\begin_layout Scrap
+										temp->value = 1/(I*frequency*analyse(word));
+\end_layout
+
+\begin_layout Scrap
+									else
+\end_layout
+
+\begin_layout Scrap
+										temp->value =analyse(word);
+\end_layout
+
+\begin_layout Scrap
+								}
+\end_layout
+
+\begin_layout Scrap
+								
+\end_layout
+
+\begin_layout Scrap
+								else
+\end_layout
+
+\begin_layout Scrap
+									temp->value = analyse(word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						default:
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						
+\end_layout
+
+\begin_layout Scrap
+					}
+\end_layout
+
+\begin_layout Scrap
+					cnt++;
+\end_layout
+
+\begin_layout Scrap
+				}
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+			if(elem_type == 2)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				int cnt = 0;
+\end_layout
+
+\begin_layout Scrap
+				
+\end_layout
+
+\begin_layout Scrap
+				if (temp->name[0] == 'E' || temp->name[0] == 'e')
+\end_layout
+
+\begin_layout Scrap
+				{	
+\end_layout
+
+\begin_layout Scrap
+					temp->vlt_src_num = vlt_src;
+\end_layout
+
+\begin_layout Scrap
+					vlt_src++;
+\end_layout
+
+\begin_layout Scrap
+				}
+\end_layout
+
+\begin_layout Scrap
+				
+\end_layout
+
+\begin_layout Scrap
+				while(word != NULL)
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					tokbuf = NULL;
+\end_layout
+
+\begin_layout Scrap
+					word = strtok(tokbuf,delim);
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+					
+\begin_inset Newline newline
+\end_inset
+
+					if( ( word==NULL && cnt<4 ) || ( word!=NULL && cnt>4 ) )
+\begin_inset Newline newline
+\end_inset
+
+					{
+\begin_inset Newline newline
+\end_inset
+
+						printf("Invalid number of tokens.
+\backslash
+n");
+\begin_inset Newline newline
+\end_inset
+
+						exit(4);
+\begin_inset Newline newline
+\end_inset
+
+					}
+\end_layout
+
+\begin_layout Scrap
+					switch(cnt)
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+						case 0: 	strcpy(temp->n1,word);
+\end_layout
+
+\begin_layout Scrap
+								
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 1: 	strcpy(temp->n2,word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 2: 	strcpy(temp->n3,word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 3: 	strcpy(temp->n4,word);
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						case 4: 	temp->value = analyse(word) ;
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+						default:
+\end_layout
+
+\begin_layout Scrap
+							break;
+\end_layout
+
+\begin_layout Scrap
+					}
+\end_layout
+
+\begin_layout Scrap
+					cnt++;
+\end_layout
+
+\begin_layout Scrap
+				}
+\end_layout
+
+\begin_layout Scrap
+			 
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+			if(elem_type == 3)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				int cnt = 0;
+\end_layout
+
+\begin_layout Scrap
+				
+\end_layout
+
+\begin_layout Scrap
+				if (temp->name[0] == 'H' || temp->name[0] == 'h')
+\end_layout
+
+\begin_layout Scrap
+				{
+\begin_inset Newline newline
+\end_inset
+
+					vlt_src++;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+				while(word != NULL)
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					tokbuf = NULL;
+\end_layout
+
+\begin_layout Scrap
+					word = strtok(tokbuf,delim);
+\end_layout
+
+\begin_layout Scrap
+					
+\end_layout
+
+\begin_layout Scrap
+					if( ( word==NULL && cnt<3 ) || ( word!=NULL && cnt>3 ) )
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+						printf("Invalid number of tokens.
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+						exit(4);
+\end_layout
+
+\begin_layout Scrap
+					}
+\end_layout
+
+\begin_layout Scrap
+					switch(cnt)
+\end_layout
+
+\begin_layout Scrap
+					{
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+						case 0:	strcpy(temp->n1,word);
+\begin_inset Newline newline
+\end_inset
+
+							break;
+\begin_inset Newline newline
+\end_inset
+
+						case 1: 	strcpy(temp->n2,word);
+\begin_inset Newline newline
+\end_inset
+
+							break;
+\begin_inset Newline newline
+\end_inset
+
+						case 2:	strcpy(temp->depname,word);
+\begin_inset Newline newline
+\end_inset
+
+							break;
+\begin_inset Newline newline
+\end_inset
+
+						case 3:	temp->value = analyse(word) ;
+\begin_inset Newline newline
+\end_inset
+
+							break;
+\begin_inset Newline newline
+\end_inset
+
+						default:
+\begin_inset Newline newline
+\end_inset
+
+							break;
+\begin_inset Newline newline
+\end_inset
+
+					}
+\begin_inset Newline newline
+\end_inset
+
+					cnt++;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+			}
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Going to the next node
+\end_layout
+
+\begin_layout Standard
+Once the line is parsed, the present node is stored in old node, the old
+ node's next is pointed to temp and the prev is pointed to the old node.
+ 
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+			temp->prev = old;
+\end_layout
+
+\begin_layout Scrap
+			temp->next = NULL;
+\end_layout
+
+\begin_layout Scrap
+			old->next = temp;
+\end_layout
+
+\begin_layout Scrap
+			old = temp;
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+			num_nodes++;
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Extracting unique nodes
+\end_layout
+
+\begin_layout Standard
+Once the whole file is parsed, the unique nodes are extracted.
+ This is done by traversing the whole linked list and the extracted nodes
+ are compared in the previously extracted node.
+ It is added if it is not previously extracted
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	char nodes[NODEMAX][32];
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	num_nodes = 0;
+\end_layout
+
+\begin_layout Scrap
+	strcpy(nodes[0],start->n1);
+\end_layout
+
+\begin_layout Scrap
+	strcpy(nodes[1],start->n2);
+\end_layout
+
+\begin_layout Scrap
+	num_nodes += 2;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	int i = 0,flag_n1 = 1,flag_n2 = 1;
+\end_layout
+
+\begin_layout Scrap
+	old = start->next;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	do
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		flag_n1 = 1;
+\end_layout
+
+\begin_layout Scrap
+		flag_n2 = 1;
+\end_layout
+
+\begin_layout Scrap
+		for (i = 0 ; i<num_nodes;i++)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			if ( strcmp(nodes[i],old->n1) == 0)
+\end_layout
+
+\begin_layout Scrap
+				flag_n1 = 0;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		if(flag_n1)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			strcpy(nodes[num_nodes],old->n1);	
+\end_layout
+
+\begin_layout Scrap
+			num_nodes++;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		for (i = 0 ; i<num_nodes;i++)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			if ( strcmp(nodes[i],old->n2) == 0)
+\end_layout
+
+\begin_layout Scrap
+				flag_n2 = 0;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		if(flag_n2)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			strcpy(nodes[num_nodes],old->n2);
+\end_layout
+
+\begin_layout Scrap
+			num_nodes++;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		old = old->next;
+\end_layout
+
+\begin_layout Scrap
+	}while(old != NULL);
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Declaring the conductance matrix
+\end_layout
+
+\begin_layout Standard
+The dimension of the conduction matrix is (num_nodes +vlt_src)x(num_nodes
+ + vlt_src +1).
+ The matrix is initialised to all zeros to avoid any garbage values.
+ 
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	int dimension = num_nodes+vlt_src +1;
+\end_layout
+
+\begin_layout Scrap
+	complex conduct_mat[dimension-1][dimension];
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	int j;	
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	for(i = 0;i<dimension-1;i++)
+\end_layout
+
+\begin_layout Scrap
+		for(j=0;j<dimension;j++)
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[i][j] = 0+0*I;
+\end_layout
+
+\begin_layout Scrap
+	
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+	old = start;
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+	int eqn_cnt = 0;
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Creating the matrix
+\end_layout
+
+\begin_layout Standard
+The creation of matrix is as follows.
+ A node is taken, and the linked list is completely traversed.
+ If the first node or the second node of the element matches with the present
+ node, then the matrix is updated by adding values to the corresponding
+ columns of the present row.
+ If the present node is 0, an equation of the form 
+\begin_inset Formula $v_{k}=0$
+\end_inset
+
+ is created.
+ 
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	for(i = 0;i<num_nodes;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		old = start;
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		int node1,node2;
+\end_layout
+
+\begin_layout Scrap
+		char present_node[32] ;
+\end_layout
+
+\begin_layout Scrap
+		strcpy(present_node,nodes[i]);
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		if(strcmp(present_node,"0") == 0)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			node1= get_index("0",nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[eqn_cnt][node1] += 1;
+\end_layout
+
+\begin_layout Scrap
+			eqn_cnt++;
+\end_layout
+
+\begin_layout Scrap
+			continue;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Creating equations for elements
+\end_layout
+
+\begin_layout Standard
+Once the zero node equation is formed, the other element's equations are
+ also formed.
+ The values are added to the corresponding element of the current row.
+ If it is a voltage source, the unknown current is added.
+ The auxilary equations are dealt seperately.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\begin_inset Newline newline
+\end_inset
+
+		do
+\begin_inset Newline newline
+\end_inset
+
+		{
+\begin_inset Newline newline
+\end_inset
+
+						
+\begin_inset Newline newline
+\end_inset
+
+			if(strcmp(old->n1,present_node) == 0)
+\begin_inset Newline newline
+\end_inset
+
+			{
+\begin_inset Newline newline
+\end_inset
+
+				node1 = get_index(old->n1,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+				node2 = get_index(old->n2,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'i' || old->name[0] == 'I')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][dimension-1] += old->value;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'r' || old->name[0] == 'R')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if((old->name[0] == 'l' || old->name[0] == 'L') &&(frequency != 0))
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if((old->name[0] == 'c' || old->name[0] == 'C') && (frequency != 0))
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'V' || old->name[0] == 'v')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][num_nodes + old->vlt_src_num] += 1;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'G' || old->name[0] == 'g')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					int node3,node4;
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					node3 = get_index(old->n3,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+					node4 = get_index(old->n4,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node3] += old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node4] -= old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'E' || old->name[0] == 'e')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][num_nodes + old->vlt_src_num] += 1;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'F' || old->name[0] == 'f')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					node *temp;
+\begin_inset Newline newline
+\end_inset
+
+					temp = start;
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					do
+\begin_inset Newline newline
+\end_inset
+
+					{
+\begin_inset Newline newline
+\end_inset
+
+						int cmp_chk = strcmp(old->depname,temp->name);
+\begin_inset Newline newline
+\end_inset
+
+						if(cmp_chk == 0)
+\begin_inset Newline newline
+\end_inset
+
+							conduct_mat[eqn_cnt][num_nodes + temp->vlt_src_num] += old->value;
+\begin_inset Newline newline
+\end_inset
+
+						
+\begin_inset Newline newline
+\end_inset
+
+						temp = temp->next;
+\begin_inset Newline newline
+\end_inset
+
+					}while(temp!= NULL);
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+			}
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			if(strcmp(old->n2,present_node) == 0)
+\begin_inset Newline newline
+\end_inset
+
+			{
+\begin_inset Newline newline
+\end_inset
+
+				node1 = get_index(old->n1,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+				node2 = get_index(old->n2,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'i' || old->name[0] == 'I')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][dimension-1] -= old->value;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'r' || old->name[0] == 'R')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if((old->name[0] == 'l' || old->name[0] == 'L') && (frequency != 0))
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'c' || old->name[0] == 'C' && (frequency != 0))
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node1] -= 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node2] += 1.0/old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'V' || old->name[0] == 'v')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][num_nodes + old->vlt_src_num] -= 1;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'G' || old->name[0] == 'g')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					int node3,node4;
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					node3 = get_index(old->n3,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+					node4 = get_index(old->n4,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node3] -= old->value;
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][node4] += old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'E' || old->name[0] == 'e')
+\begin_inset Newline newline
+\end_inset
+
+					conduct_mat[eqn_cnt][num_nodes + old->vlt_src_num] -= 1;
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+				if(old->name[0] == 'F' || old->name[0] == 'f')
+\begin_inset Newline newline
+\end_inset
+
+				{
+\begin_inset Newline newline
+\end_inset
+
+					node *temp;
+\begin_inset Newline newline
+\end_inset
+
+					temp = start;
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+					do
+\begin_inset Newline newline
+\end_inset
+
+					{
+\begin_inset Newline newline
+\end_inset
+
+						int cmp_chk = strcmp(old->depname,temp->name);
+\begin_inset Newline newline
+\end_inset
+
+						if(cmp_chk == 0)
+\begin_inset Newline newline
+\end_inset
+
+							conduct_mat[eqn_cnt][num_nodes + temp->vlt_src_num] -= old->value;
+\begin_inset Newline newline
+\end_inset
+
+						
+\begin_inset Newline newline
+\end_inset
+
+						temp = temp->next;
+\begin_inset Newline newline
+\end_inset
+
+					}while(temp!= NULL);
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+				
+\begin_inset Newline newline
+\end_inset
+
+			}
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+			old = old->next;
+\begin_inset Newline newline
+\end_inset
+
+			
+\begin_inset Newline newline
+\end_inset
+
+		}while(old != NULL);
+\begin_inset Newline newline
+\end_inset
+
+		
+\begin_inset Newline newline
+\end_inset
+
+		eqn_cnt++;
+\begin_inset Newline newline
+\end_inset
+
+	}
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+The auxilary equations
+\end_layout
+
+\begin_layout Standard
+Once all the nodes are traversed, the auxilary equations are formed.
+ If it is an independent voltage source, 3 columns are updated, corresponding
+ to the nodes and the constants row.
+ If it is a voltage dependent source, 4 columns are updated, corresponding
+ to the nodes.
+ If it is a current controlled source, then the columns corresponding to
+ nodes and the column corresponding to the dependent voltage source is updated.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	int vlt_src_cnt = 0;
+\end_layout
+
+\begin_layout Scrap
+	old = start;
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+	do
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		if(old->name[0] == 'V' || old->name[0] == 'v')
+\begin_inset Newline newline
+\end_inset
+
+		{
+\begin_inset Newline newline
+\end_inset
+
+			int node1 = get_index(old->n1,nodes,num_nodes);
+\begin_inset Newline newline
+\end_inset
+
+			int node2 = get_index(old->n2,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[num_nodes + vlt_src_cnt][node1] += 1;
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[num_nodes + vlt_src_cnt][node2] -= 1;
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[num_nodes + vlt_src_cnt][dimension-1] += old->value;
+\end_layout
+
+\begin_layout Scrap
+			vlt_src_cnt++;
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+		if(old->name[0] == 'E' || old->name[0] == 'e')
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			int node1 = get_index(old->n1,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			int node2 = get_index(old->n2,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			int node3 = get_index(old->n3,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			int node4 = get_index(old->n4,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			conduct_mat[num_nodes + vlt_src_cnt][node1] += 1;
+\begin_inset Newline newline
+\end_inset
+
+			conduct_mat[num_nodes + vlt_src_cnt][node2] -= 1;
+\begin_inset Newline newline
+\end_inset
+
+			conduct_mat[num_nodes + vlt_src_cnt][node3] -= old->value;
+\begin_inset Newline newline
+\end_inset
+
+			conduct_mat[num_nodes + vlt_src_cnt][node4] += old->value;
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+			vlt_src_cnt++;
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+		if(old->name[0] == 'H' || old->name[0] == 'h')
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			int node1 = get_index(old->n1,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+			int node2 = get_index(old->n2,nodes,num_nodes);
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+			node *temp;
+\begin_inset Newline newline
+\end_inset
+
+			temp = start;
+\end_layout
+
+\begin_layout Scrap
+			do
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+				int cmp_chk = strcmp(temp->name,old->depname);
+\end_layout
+
+\begin_layout Scrap
+				if (cmp_chk == 0)
+\end_layout
+
+\begin_layout Scrap
+				{
+\end_layout
+
+\begin_layout Scrap
+					conduct_mat[num_nodes + vlt_src_cnt][node1] += 1+0*I;
+\end_layout
+
+\begin_layout Scrap
+					conduct_mat[num_nodes + vlt_src_cnt][node2] -= 1+0*I;
+\end_layout
+
+\begin_layout Scrap
+					conduct_mat[num_nodes + vlt_src_cnt][num_nodes + temp->vlt_src_num]
+ += old->value;
+\begin_inset Newline newline
+\end_inset
+
+				}
+\begin_inset Newline newline
+\end_inset
+
+					
+\begin_inset Newline newline
+\end_inset
+
+				temp = temp->next;
+\begin_inset Newline newline
+\end_inset
+
+			}while(temp != NULL);
+\begin_inset Newline newline
+\end_inset
+
+		}
+\begin_inset Newline newline
+\end_inset
+
+		old = old->next;
+\begin_inset Newline newline
+\end_inset
+
+	}while(old != NULL);
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+		
+\begin_inset Newline newline
+\end_inset
+
+	int k = 0;
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Checking for empty 
+\begin_inset Formula $I_{ii}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There will be cases when the element 
+\begin_inset Formula $I_{ii}$
+\end_inset
+
+ is zero.
+ One example being voltage sources in series.
+ In such a case, it searches for a simalar row in which the 
+\begin_inset Formula $I_{ji}$
+\end_inset
+
+ element is non zero and adds that row to the 
+\begin_inset Formula $i^{th}$
+\end_inset
+
+ row.
+ This ensures that the matrix is solvable.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	for(i=0;i<dimension-1;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		if(conduct_mat[i][i] == (0+0*I))
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			for(j = 0;j<dimension-1;j++)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				if(conduct_mat[j][i] !=0+0*I)
+\end_layout
+
+\begin_layout Scrap
+					break;
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+			for(k = 0;k<dimension;k++)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				conduct_mat[i][k] +=conduct_mat[j][k];
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Forming upper triangle using Gaussian elimination
+\end_layout
+
+\begin_layout Standard
+Once the matrix is ready, the matrix is converted into an upper triangle
+ matrix.
+ This is done using the Gaussian method.
+ For a given row 
+\begin_inset Formula $j$
+\end_inset
+
+ , the elements upto 
+\begin_inset Formula $j-1$
+\end_inset
+
+ column is made zero.
+ This is repeated for all the rows except the first.
+ The first is left intact.
+ After the matrix is an upper triangle matrix, it checks if any element
+ 
+\begin_inset Formula $I_{ii}$
+\end_inset
+
+ is zero.
+ If so, it is an indeterminate system and it quits.
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	for(i=1;i<dimension-1;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		for(j=0;j<i;j++)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			if(conduct_mat[i][j] == 0)
+\end_layout
+
+\begin_layout Scrap
+				continue;
+\end_layout
+
+\begin_layout Scrap
+			complex mult_factor = conduct_mat[i][j]/conduct_mat[j][j];
+\end_layout
+
+\begin_layout Scrap
+			
+\end_layout
+
+\begin_layout Scrap
+			for(k=j;k<dimension;k++)
+\end_layout
+
+\begin_layout Scrap
+			{
+\end_layout
+
+\begin_layout Scrap
+				conduct_mat[i][k]  -= mult_factor*conduct_mat[j][k] ;
+\end_layout
+
+\begin_layout Scrap
+			}
+\end_layout
+
+\begin_layout Scrap
+				
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	for(i = 0;i<dimension-1;i++)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		if(conduct_mat[i][i] == 0)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			printf("Indeterminate system.Analysis will stop.
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+			exit(8);
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Generating solution
+\end_layout
+
+\begin_layout Standard
+Now, the matrix is solved from the last row.
+ The solution obtained upto 
+\begin_inset Formula $(i-1)^{th}$
+\end_inset
+
+ row is used for solving 
+\begin_inset Formula $i^{th}$
+\end_inset
+
+ row.
+ The generated solutions are stored in a complex type matrix.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	complex solution[dimension-1];
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+	for(i = 0;i<dimension-1;i++)
+\begin_inset Newline newline
+\end_inset
+
+		solution[i] = 0+0*I;
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+	solution[dimension-2] = (conduct_mat[dimension-2][dimension-1]/conduct_mat[dime
+nsion-2][dimension-2]);
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+	for(i=dimension-3;i>=0;i--)
+\begin_inset Newline newline
+\end_inset
+
+	{
+\begin_inset Newline newline
+\end_inset
+
+		complex subtractor = 0+0*I;
+\begin_inset Newline newline
+\end_inset
+
+		for (j=dimension-2;j>i;j--)
+\begin_inset Newline newline
+\end_inset
+
+		{
+\begin_inset Newline newline
+\end_inset
+
+			subtractor += conduct_mat[i][j]*solution[j];
+\begin_inset Newline newline
+\end_inset
+
+		}
+\begin_inset Newline newline
+\end_inset
+
+		solution[i] = ((conduct_mat[i][dimension-1]) - subtractor)/conduct_mat[i][i];
+\begin_inset Newline newline
+\end_inset
+
+	}
+\begin_inset Newline newline
+\end_inset
+
+	
+\begin_inset Newline newline
+\end_inset
+
+	complex vlt1,vlt2,vlt_diff;
+\begin_inset Newline newline
+\end_inset
+
+@
+\end_layout
+
+\begin_layout Subsubsection*
+Clamp voltage
+\end_layout
+
+\begin_layout Standard
+Once the solutions are obtained, the voltages corresponding to the clamp
+ nodes is retrieved and the difference is returned.
+ This ends the work for the solver loop.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+	vlt1 = solution[get_index(clamp_nodes[0],nodes,num_nodes)];
+\end_layout
+
+\begin_layout Scrap
+	vlt2 = solution[get_index(clamp_nodes[1],nodes,num_nodes)];
+\end_layout
+
+\begin_layout Scrap
+	vlt_diff = vlt2-vlt1;
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+	return vlt_diff;
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	fclose(fp);
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Subsection*
+main() function.
+\end_layout
+
+\begin_layout Standard
+The main function is very small since, it only calls the solver function.
+ If there are only two arguements, it prints the voltage difference, at
+ 
+\begin_inset Formula $0Hz$
+\end_inset
+
+.
+ If there are 3 arguements, it prints the voltage difference at the given
+ frequency.
+ If there are 5 arguements, it creates a 
+\begin_inset Formula $.dat$
+\end_inset
+
+ file and saves the voltage difference and the corresponding frequencies.
+\end_layout
+
+\begin_layout Scrap
+<<*>>=
+\end_layout
+
+\begin_layout Scrap
+int main(int argc,char **argv)
+\end_layout
+
+\begin_layout Scrap
+{
+\end_layout
+
+\begin_layout Scrap
+	float frequency;
+\end_layout
+
+\begin_layout Scrap
+	float strt_freq,end_freq,step_size;
+\end_layout
+
+\begin_layout Scrap
+	int steps;
+\end_layout
+
+\begin_layout Scrap
+	complex voltage = 0+0*I;
+\end_layout
+
+\begin_layout Scrap
+	FILE *data;
+\end_layout
+
+\begin_layout Scrap
+
+\end_layout
+
+\begin_layout Scrap
+	
+\begin_inset Newline newline
+\end_inset
+
+	printf("Program: Myspice
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+	data = fopen("plot_data.dat","w");
+\end_layout
+
+\begin_layout Scrap
+	printf("opened netlist: %s
+\backslash
+n",argv[1]);
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	if(argc<=1)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		printf("Control file missing.
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		printf("Usage: ./executable controlfile
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		printf("Now aborting
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		exit(1);
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	else if(argc == 2)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		printf("DC analysis chosen
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		voltage = solver(argv,0);
+\end_layout
+
+\begin_layout Scrap
+		printf("voltage at requested node is %f
+\backslash
+n",c_abs(voltage));
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	else if(argc == 3) 
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		printf("Single frequency analysis at %s
+\backslash
+n",argv[2]);
+\end_layout
+
+\begin_layout Scrap
+		frequency = atof(argv[2]);
+\end_layout
+
+\begin_layout Scrap
+		voltage = solver(argv,frequency);
+\end_layout
+
+\begin_layout Scrap
+		printf("Voltage at requested node at %f frequency is %f",frequency,c_abs(volta
+ge));
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+	else if(argc == 5)
+\end_layout
+
+\begin_layout Scrap
+	{
+\end_layout
+
+\begin_layout Scrap
+		printf("Frequency sweep.
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		strt_freq = atof(argv[2]);
+\end_layout
+
+\begin_layout Scrap
+		end_freq = atof(argv[3]);
+\end_layout
+
+\begin_layout Scrap
+		steps = atof(argv[4]);
+\end_layout
+
+\begin_layout Scrap
+		step_size = (end_freq-strt_freq)/steps;
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		int i =0;
+\end_layout
+
+\begin_layout Scrap
+		for (i =0;i<steps;i++)
+\end_layout
+
+\begin_layout Scrap
+		{
+\end_layout
+
+\begin_layout Scrap
+			frequency = strt_freq+step_size*i;
+\end_layout
+
+\begin_layout Scrap
+			voltage = solver(argv,frequency);
+\end_layout
+
+\begin_layout Scrap
+			fprintf(data,"%f %f
+\backslash
+n",frequency,c_abs(voltage));
+\end_layout
+
+\begin_layout Scrap
+		}
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		fclose(data);
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+		printf("data file created as plot_data.dat
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		printf("thank you for using myspice.use 'python plot.py plot_data.dat'for
+ getting a plot of the frequency sweep.
+\backslash
+n
+\backslash
+n");
+\end_layout
+
+\begin_layout Scrap
+		
+\end_layout
+
+\begin_layout Scrap
+	}
+\end_layout
+
+\begin_layout Scrap
+	
+\end_layout
+
+\begin_layout Scrap
+}
+\end_layout
+
+\begin_layout Scrap
+@
+\end_layout
+
+\begin_layout Part*
+Results
+\end_layout
+
+\begin_layout Standard
+The code was checked for multiple net lists and the following results were
+ obtained
+\end_layout
+
+\begin_layout Itemize
+A very simple netlist having only resistive elements was checked.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+The netlist is as follows:
+\end_layout
+
+\begin_layout Scrap
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "circuit0.dat"
+lstparams "breaklines=true,language=C"
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+A very steep low pass filter.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+The netlist is :
+\end_layout
+
+\begin_layout Scrap
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "circuit1.dat"
+lstparams "breaklines=true,language=C"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+The plot obtained is:
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Graphics
+	filename Low_pass_filter.png
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+A low pass filter with an opamp:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+The netlist is :
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "circuit3.dat"
+lstparams "breaklines=true,language=C"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+The plot obtained is:
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Graphics
+	filename Low_pass_filter_with_opamp.png
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+A band pass filter
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+The netlist:
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "ntw.dat"
+lstparams "breaklines=true,language=C"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Plot obtained
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+\begin_inset Graphics
+	filename bandpass_filter.png
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The netlist with opamp asserts the power of the program.
+\end_layout
+
+\begin_layout Part*
+Drawbacks
+\end_layout
+
+\begin_layout Standard
+The following are the drawbacks:
+\end_layout
+
+\begin_layout Enumerate
+The program does not check pivoting of the matrix.
+ Hence a large noise can also be induced
+\end_layout
+
+\begin_layout Enumerate
+The program cannot solve if there are parallel voltage sources
+\end_layout
+
+\begin_layout Enumerate
+The program does not solve a DC analysis if there are capacitors and inductors.
+\end_layout
+
+\begin_layout Enumerate
+It is only limited to linear sources.
+\end_layout
+
+\begin_layout Part*
+Conclusion
+\end_layout
+
+\begin_layout Standard
+The program effectively exploits the power of C and the pointers in C.
+ The program is a very simple version of the SPICE program which can solve
+ very complicated circuits provided there are only linear elements.
+ The program does a frequency analysis with much efficiency, which is asserted
+ by the plot of the low pass filter and the low pass filter wiht op amp.
+\end_layout
+
+\begin_layout Part*
+References
+\end_layout
+
+\begin_layout Itemize
+Tutorial notes by Dr.Harishankar Ramachandran at 
+\begin_inset Formula $http://www.ee.iitm.ac.in/moodle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Ted jensen lectures on pointers at 
+\begin_inset Formula $pw1.netcom.com/~tjensen/ptr/pointers.htm$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Tutorial on pointers on Stanford University at 
+\begin_inset Formula $cslibrary.stanford.edu/106/$
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
